@@ -7,7 +7,7 @@ type ICardProps = ViewProps &
   VariantProps<typeof cardStyle> & { className?: string };
 
 const Card = React.forwardRef<React.ElementRef<typeof View>, ICardProps>(
-  ({ className, size = 'md', variant = 'elevated', ...props }, ref) => {
+  ({ className, size = 'lg', variant = 'elevated', ...props }, ref) => {
     return (
       <View
         className={cardStyle({ size, variant, class: className })}

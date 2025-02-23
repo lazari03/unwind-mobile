@@ -1,85 +1,164 @@
-import React from "react";
-import Gradient from "@/assets/Icons/Gradient";
-import DocumentData from "@/assets/Icons/DocumentData";
-import LightBulbPerson from "@/assets/Icons/LightbulbPerson";
-import Rocket from "@/assets/Icons/Rocket";
-import Logo from "@/assets/Icons/Logo";
-import { Box } from "@/components/ui/box";
-import { ScrollView } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { SafeAreaView, View, TouchableOpacity, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
+import { Ionicons } from "@expo/vector-icons";
+import CategoryList from "./components/CategoryList";
+import EventList from "./components/Events/EventList";
+import EventCarousel from "./components/Events/EventCarousel";
+import NoUpcomingEvents from "./components/NoUpcomingEvents";
+import { fetchPosts, fetchCategories, checkSeenEvents, markEventsAsSeen, Post, Category, featuredPosts } from "./services/eventService";
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './navigation/RootStackParamList';
 
-import { Link } from "expo-router";
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
-const FeatureCard = ({ iconSvg: IconSvg, name, desc }: any) => {
-  return (
-    <Box
-      className="flex-column border border-w-1 border-outline-700 md:flex-1 m-2 p-4 rounded"
-      key={name}
-    >
-      <Box className="items-center flex flex-row">
-        <Text>
-          <IconSvg />
-        </Text>
-        <Text className="text-typography-white font-medium ml-2 text-xl">
-          {name}
-        </Text>
-      </Box>
-      <Text className="text-typography-400 mt-2">{desc}</Text>
-    </Box>
-  );
+type Props = {
+  navigation: HomeScreenNavigationProp;
 };
 
-export default function Home() {
-  return (
-    <Box className="flex-1 bg-black h-[100vh]">
-      <ScrollView
-        style={{ height: "100%" }}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        <Box className="absolute h-[500px] w-[500px] lg:w-[700px] lg:h-[700px]">
-          <Gradient />
-        </Box>
-        <Box className="flex flex-1 items-center my-16 mx-5 lg:my-24 lg:mx-32">
-          <Box className="gap-10 base:flex-col sm:flex-row justify-between sm:w-[80%] md:flex-1">
-            <Box className="bg-background-template py-2 px-6 rounded-full items-center flex-column md:flex-row md:self-start">
-              <Text className="text-typography-white font-normal">
-                Get started by editing
-              </Text>
-              <Text className="text-typography-white font-medium ml-2">
-                ./App.tsx
-              </Text>
-            </Box>
-            <Link href="/tabs/">
-              <Box className="bg-background-template py-2 px-6 rounded-full items-center flex-column sm:flex-row md:self-start">
-                <Text className="text-typography-white font-normal">
-                  Explore Tab Navigation
-                </Text>
-              </Box>
-            </Link>
-          </Box>
-          <Box className="flex-1 justify-center items-center h-[20px] w-[300px] lg:h-[160px] lg:w-[400px]">
-            <Logo />
-          </Box>
+export default function Home({ navigation }: Props) {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [hasSeenEvents, setHasSeenEvents] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
-          <Box className="flex-column md:flex-row">
-            <FeatureCard
-              iconSvg={DocumentData}
-              name="Docs"
-              desc="Find in-depth information about gluestack features and API."
+  // Fetch Data
+  const fetchData = async () => {
+    setRefreshing(true);
+    const fetchedPosts = await fetchPosts();
+    const fetchedCategories = await fetchCategories();
+    setPosts(fetchedPosts);
+    setCategories(fetchedCategories);
+    const seenEvents = await checkSeenEvents();
+    setHasSeenEvents(seenEvents);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    markEventsAsSeen();
+  }, [posts]);
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(() => {
+    fetchData();
+  }, []);
+
+  // Filter events based on the selected category
+  const filteredPosts = selectedCategory
+    ? posts.filter(post => post.eventCategory.id === selectedCategory)
+    : posts;
+
+  // Get featured posts from all posts
+  const featuredPostsList = featuredPosts(posts);
+
+  const handleEventPress = (event: Post) => {
+    navigation.navigate('EventDetails', { event });
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
+      {/* SafeAreaView for the header to avoid overlap with the notch */}
+      <SafeAreaView style={styles.headerContainer}>
+        <HStack style={styles.header}>
+          <Text style={styles.headerText}>Unwind</Text>
+          <HStack style={styles.headerIcons}>
+            {/* Plus Button */}
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="add-outline" size={24} color="white" />
+            </TouchableOpacity>
+            {/* Profile Button */}
+            {/* Removed Profile Button */}
+          </HStack>
+        </HStack>
+        <View style={styles.underline} />
+      </SafeAreaView>
+  
+      {/* Main Content Area */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ alignItems: 'center', paddingTop: 16 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="white" />
+        }
+        stickyHeaderIndices={[1]} // Make the title and category list sticky
+      >
+        {featuredPostsList.length > 0 && <EventCarousel posts={featuredPostsList} />}
+        <View style={styles.stickyHeaderContainer}>
+          <Text style={styles.sectionTitle}>This Week's Events</Text>
+          <CategoryList categories={categories} onSelectCategory={setSelectedCategory} />
+        </View>
+        <View style={styles.eventListContainer}>
+          {filteredPosts.length > 0 ? (
+            <EventList posts={filteredPosts} onEventPress={handleEventPress} />
+          ) : (
+            <NoUpcomingEvents 
+              onReload={fetchData} 
+              selectedCategory={categories.find(category => category.id === selectedCategory) || null} 
             />
-            <FeatureCard
-              iconSvg={LightBulbPerson}
-              name="Learn"
-              desc="Learn about gluestack in an interactive course with quizzes!"
-            />
-            <FeatureCard
-              iconSvg={Rocket}
-              name="Deploy"
-              desc="Instantly drop your gluestack site to a shareable URL with vercel."
-            />
-          </Box>
-        </Box>
+          )}
+        </View>
       </ScrollView>
-    </Box>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    backgroundColor: "black",
+    // Removed borderBottomWidth and borderBottomColor
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: 'space-between',
+    backgroundColor: 'black',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  headerText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 40,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  underline: {
+    height: 2,
+    backgroundColor: 'white',
+    marginHorizontal: 16,
+    borderRadius: 1,
+  },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginTop: 20, // Add marginTop to create space between the title and the featured slider
+  },
+  stickyHeaderContainer: {
+    backgroundColor: 'black',
+    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  eventListContainer: {
+    width: '100%',
+    padding: 16,
+    alignItems: 'center', // Center the event cards
+  },
+});
