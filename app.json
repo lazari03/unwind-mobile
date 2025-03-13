@@ -58,6 +58,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/fb5e5bda-0cda-416f-b9d4-d307e4022eda"
-    }
+    },
+    "newArchEnabled": true
   }
 }

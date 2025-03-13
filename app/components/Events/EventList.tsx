@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image } from 'react-native';
+import { View, Image, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -9,9 +9,10 @@ import styles from './EventList.styles';
 
 type EventListProps = {
   posts: Post[];
+  onEventPress: (event: Post) => void;
 };
 
-const EventList: React.FC<EventListProps> = ({ posts }) => {
+const EventList: React.FC<EventListProps> = ({ posts, onEventPress }) => {
   return (
     <View style={{ width: '100%' }}>
       {posts.length === 0 ? (
@@ -40,25 +41,27 @@ const EventList: React.FC<EventListProps> = ({ posts }) => {
         </Box>
       ) : (
         posts.map(post => (
-          <Box key={post.id} style={styles.box}>
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: post.eventPoster }} style={styles.image} />
-              {/* Gradient Overlay */}
-              <LinearGradient
-                colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 1)']}
-                locations={[0, 0.4, 1]}
-                style={styles.gradient}
-              >
-                {/* Title Section Inside Red Line */}
-                <View style={styles.titleContainer}>
-                  <View style={styles.redLine}>
-                    <Text style={styles.titleText}>{post.title}</Text>
-                    <Text style={styles.placeText}>{post.eventHost}</Text>
+          <TouchableOpacity key={post.id} onPress={() => onEventPress(post)}>
+            <Box style={styles.box}>
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: post.eventPoster }} style={styles.image} />
+                {/* Gradient Overlay */}
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 1)']}
+                  locations={[0, 0.4, 1]}
+                  style={styles.gradient}
+                >
+                  {/* Title Section Inside Red Line */}
+                  <View style={styles.titleContainer}>
+                    <View style={styles.redLine}>
+                      <Text style={styles.titleText}>{post.title}</Text>
+                      <Text style={styles.placeText}>{post.eventHost}</Text>
+                    </View>
                   </View>
-                </View>
-              </LinearGradient>
-            </View>
-          </Box>
+                </LinearGradient>
+              </View>
+            </Box>
+          </TouchableOpacity>
         ))
       )}
     </View>

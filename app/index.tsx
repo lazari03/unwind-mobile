@@ -8,16 +8,12 @@ import EventList from "./components/Events/EventList";
 import EventCarousel from "./components/Events/EventCarousel";
 import NoUpcomingEvents from "./components/NoUpcomingEvents";
 import { fetchPosts, fetchCategories, checkSeenEvents, markEventsAsSeen, Post, Category, featuredPosts } from "./services/eventService";
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigation/RootStackParamList';
+import { useRouter } from "expo-router";
+import { styles as homeStyles } from "../styles/home.styles";
+import 'tailwindcss-react-native';
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-
-type Props = {
-  navigation: HomeScreenNavigationProp;
-};
-
-export default function Home({ navigation }: Props) {
+export default function Home() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [hasSeenEvents, setHasSeenEvents] = useState<boolean>(false);
@@ -58,27 +54,30 @@ export default function Home({ navigation }: Props) {
   const featuredPostsList = featuredPosts(posts);
 
   const handleEventPress = (event: Post) => {
-    navigation.navigate('EventDetails', { event });
+    console.log("Event Pressed", event);
+    router.push("/(screens)/EventDetails");
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
       {/* SafeAreaView for the header to avoid overlap with the notch */}
-      <SafeAreaView style={styles.headerContainer}>
-        <HStack style={styles.header}>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
           <Text style={styles.headerText}>Unwind</Text>
-          <HStack style={styles.headerIcons}>
+          <View style={styles.headerIcons}>
             {/* Plus Button */}
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="add-outline" size={24} color="white" />
             </TouchableOpacity>
             {/* Profile Button */}
-            {/* Removed Profile Button */}
-          </HStack>
-        </HStack>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="person-circle-outline" size={32} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
         <View style={styles.underline} />
-      </SafeAreaView>
-  
+      </View>
+
       {/* Main Content Area */}
       <ScrollView
         style={{ flex: 1 }}
@@ -88,7 +87,7 @@ export default function Home({ navigation }: Props) {
         }
         stickyHeaderIndices={[1]} // Make the title and category list sticky
       >
-        {featuredPostsList.length > 0 && <EventCarousel posts={featuredPostsList} />}
+        {featuredPostsList.length > 0 && <EventCarousel posts={featuredPostsList} onEventPress={handleEventPress} />}
         <View style={styles.stickyHeaderContainer}>
           <Text style={styles.sectionTitle}>This Week's Events</Text>
           <CategoryList categories={categories} onSelectCategory={setSelectedCategory} />
@@ -111,54 +110,57 @@ export default function Home({ navigation }: Props) {
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: "black",
-    // Removed borderBottomWidth and borderBottomColor
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.5)",
   },
   header: {
     flexDirection: "row",
-    justifyContent: 'space-between',
-    backgroundColor: 'black',
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    alignItems: 'center',
+    height: 60,
   },
   headerText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 40,
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 24,
   },
   headerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   iconButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
+    marginLeft: 10,
   },
   underline: {
-    height: 2,
-    backgroundColor: 'white',
+    height: 1,
+    backgroundColor: "white",
     marginHorizontal: 16,
-    borderRadius: 1,
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 20, // Add marginTop to create space between the title and the featured slider
+    borderRadius: 2,
   },
   stickyHeaderContainer: {
-    backgroundColor: 'black',
-    width: '100%',
+    backgroundColor: "black",
+    width: "100%",
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
+  sectionTitle: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 10,
+    marginTop: 20,
+  },
   eventListContainer: {
-    width: '100%',
+    width: "100%",
     padding: 16,
-    alignItems: 'center', // Center the event cards
+    alignItems: "center",
   },
 });

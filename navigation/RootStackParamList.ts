@@ -1,7 +1,10 @@
-import { Post } from '../app/services/eventService';
-
+// Define the RootStackParamList type
 export type RootStackParamList = {
-    Home: undefined;
-    EventDetails: { event: Post };
-    // other routes
-  };
+  Home: undefined;
+  EventDetails: { eventId: string };
+  Profile: undefined;
+  // Add other screens here
+};
+
+// Ensure a default export is present
+export default RootStackParamList;
